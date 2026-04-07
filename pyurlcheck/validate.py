@@ -1,13 +1,13 @@
 """Takes a URL and Validates a Successful HTTP Response Code."""
+
 import logging
 
 import requests
 
 from pyurlcheck.utils import redirect_mapper
 
-
 # suppresses invalid cert warnings, deprecated..., using verify=False
-requests.packages.urllib3.disable_warnings()  # pylint:disable=no-member
+requests.packages.urllib3.disable_warnings()  # noqa: S404
 
 
 class ValidateUrl:
@@ -25,9 +25,9 @@ class ValidateUrl:
         }
         if self.need_scheme:
             logging.debug("No scheme was provided, using http. For %s", self.url)
-            resp = requests.get(f"http://{self.url}", headers=headers, verify=False)  # nosec
+            resp = requests.get(f"http://{self.url}", headers=headers, verify=False, timeout=30)  # noqa: S501
         else:
-            resp = requests.get(self.url, headers=headers, verify=False)  # nosec
+            resp = requests.get(self.url, headers=headers, verify=False, timeout=30)  # noqa: S501
         if len(resp.history) > 0:
             has_redirect = redirect_mapper(resp)
             logging.debug("Redirects: %s", has_redirect)

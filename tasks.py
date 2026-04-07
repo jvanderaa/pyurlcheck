@@ -1,13 +1,13 @@
 """Tasks for use with Invoke."""
+
 import os
-import sys
-from distutils.util import strtobool
+
 from invoke import task
 
 try:
-    import toml
-except ImportError:
-    sys.exit("Please make sure to `pip install toml` or enable the Poetry shell and run `poetry install`.")
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 
 def is_truthy(arg):
@@ -23,14 +23,20 @@ def is_truthy(arg):
     """
     if isinstance(arg, bool):
         return arg
-    return bool(strtobool(arg))
+    val = str(arg).lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return True
+    if val in ("n", "no", "f", "false", "off", "0"):
+        return False
+    raise ValueError(f"Invalid truthy value: `{arg}`")
 
 
-PYPROJECT_CONFIG = toml.load("pyproject.toml")
+with open("pyproject.toml", "rb") as _f:
+    PYPROJECT_CONFIG = tomllib.load(_f)
 TOOL_CONFIG = PYPROJECT_CONFIG["tool"]["poetry"]
 
 # Can be set to a separate Python version to be used for launching or building image
-PYTHON_VER = os.getenv("PYTHON_VER", "3.6")
+PYTHON_VER = os.getenv("PYTHON_VER", "3.12")
 # Name of the docker image/image
 IMAGE_NAME = os.getenv("IMAGE_NAME", TOOL_CONFIG["name"])
 # Tag for the image
@@ -38,7 +44,7 @@ IMAGE_VER = os.getenv("IMAGE_VER", f"{TOOL_CONFIG['version']}-py{PYTHON_VER}")
 # Gather current working directory for Docker commands
 PWD = os.getcwd()
 # Local or Docker execution provide "local" to run locally without docker execution
-INVOKE_LOCAL = is_truthy(os.getenv("INVOKE_LOCAL", False))  # pylint: disable=W1508
+INVOKE_LOCAL = is_truthy(os.getenv("INVOKE_LOCAL", False))
 
 
 def run_cmd(context, exec_cmd, local=INVOKE_LOCAL):
@@ -48,6 +54,7 @@ def run_cmd(context, exec_cmd, local=INVOKE_LOCAL):
         context ([invoke.task]): Invoke task object.
         exec_cmd ([str]): Command to run.
         local (bool): Define as `True` to execute locally
+
     Returns:
         result (obj): Contains Invoke result from running task.
     """
@@ -105,45 +112,40 @@ def pytest(context, local=INVOKE_LOCAL):
     run_cmd(context, exec_cmd, local)
 
 
-@task(help={"local": "Run locally or within the Docker container"})
-def black(context, local=INVOKE_LOCAL):
-    """Run black to check that Python files adherence to black standards."""
-    exec_cmd = "black --check --diff ."
-    run_cmd(context, exec_cmd, local)
+@task(
+    help={
+        "action": "One of 'lint' or 'format'",
+        "fix": "Automatically fix issues",
+        "local": "Run locally or within the Docker container",
+    }
+)
+def ruff(context, action=None, fix=False, local=INVOKE_LOCAL):
+    """Run ruff for code formatting and linting."""
+    if action is None:
+        actions = ["format", "lint"]
+    else:
+        actions = [action]
 
-
-@task(help={"local": "Run locally or within the Docker container"})
-def flake8(context, local=INVOKE_LOCAL):
-    """Run flake8 code analysis."""
-    exec_cmd = "flake8 ."
-    run_cmd(context, exec_cmd, local)
-
-
-@task(help={"local": "Run locally or within the Docker container"})
-def pylint(context, local=INVOKE_LOCAL):
-    """Run pylint code analysis."""
-    exec_cmd = 'find . -name "*.py" | xargs pylint'
-    run_cmd(context, exec_cmd, local)
+    for act in actions:
+        if act == "format":
+            command = "ruff format"
+            if not fix:
+                command += " --check"
+            command += " ."
+        elif act == "lint":
+            command = "ruff check"
+            if fix:
+                command += " --fix"
+            command += " ."
+        else:
+            raise ValueError(f"Invalid ruff action: {act}. Must be 'lint' or 'format'.")
+        run_cmd(context, command, local)
 
 
 @task(help={"local": "Run locally or within the Docker container"})
 def yamllint(context, local=INVOKE_LOCAL):
-    """Run yamllint to validate formatting adheres to NTC defined YAML standards."""
+    """Run yamllint to validate YAML formatting."""
     exec_cmd = "yamllint ."
-    run_cmd(context, exec_cmd, local)
-
-
-@task(help={"local": "Run locally or within the Docker container"})
-def pydocstyle(context, local=INVOKE_LOCAL):
-    """Run pydocstyle to validate docstring formatting adheres to NTC defined standards."""
-    exec_cmd = "pydocstyle ."
-    run_cmd(context, exec_cmd, local)
-
-
-@task(help={"local": "Run locally or within the Docker container"})
-def bandit(context, local=INVOKE_LOCAL):
-    """Run bandit to validate basic static code security analysis."""
-    exec_cmd = "bandit --recursive ./ --configfile .bandit.yml"
     run_cmd(context, exec_cmd, local)
 
 
@@ -157,12 +159,8 @@ def cli(context):
 @task(help={"local": "Run locally or within the Docker container"})
 def tests(context, local=INVOKE_LOCAL):
     """Run all tests for this repository."""
-    black(context, local)
-    flake8(context, local)
-    pylint(context, local)
-    yamllint(context, local)
-    pydocstyle(context, local)
-    bandit(context, local)
-    pytest(context, local)
+    ruff(context, local=local)
+    yamllint(context, local=local)
+    pytest(context, local=local)
 
     print("All tests have passed!")

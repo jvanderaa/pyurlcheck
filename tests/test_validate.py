@@ -1,4 +1,5 @@
 """Test for validate."""
+
 from pyurlcheck.validate import ValidateUrl
 
 

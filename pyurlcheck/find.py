@@ -1,8 +1,10 @@
 """Find all URLs in File or all files in a directory."""
+
 import logging
 import os
 import re
 from pathlib import Path
+
 from pyurlcheck.constants import IGNORE_DIRS
 
 

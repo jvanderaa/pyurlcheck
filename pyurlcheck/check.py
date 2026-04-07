@@ -1,7 +1,9 @@
 """Check Whether URL is Public or Private."""
-import logging
+
 import ipaddress
+import logging
 from urllib.parse import urlparse
+
 from dns import resolver
 
 
@@ -37,7 +39,7 @@ def is_private(ip_addr):
     """Take a URL manipulate it and check if it's Private RFC1918.
 
     Args:
-        ip (str): IP address from the dns resolution.
+        ip_addr (str): IP address from the dns resolution.
 
     Returns:
         Boolean: True/False whether address is RFC1918 space.

@@ -1,8 +1,10 @@
 """Tests for Find"""
 
 import os
+
 import pytest
-from pyurlcheck.find import _read_in_file, _new_populate_file_dict, FindUrls
+
+from pyurlcheck.find import FindUrls, _new_populate_file_dict, _read_in_file
 
 
 def test_read_in_file():

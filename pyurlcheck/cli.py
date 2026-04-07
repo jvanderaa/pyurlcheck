@@ -1,13 +1,13 @@
 """Example cli using click."""
+
 import logging
 import sys
 
 import click
 
-from pyurlcheck.check import split_url, get_ip, is_private
+from pyurlcheck.check import get_ip, is_private, split_url
 from pyurlcheck.find import FindUrls
 from pyurlcheck.validate import ValidateUrl
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,4 +51,4 @@ def main(input_data, log_level):
 
 
 if __name__ == "__main__":
-    main()  # pylint: disable=no-value-for-parameter
+    main()

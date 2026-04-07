@@ -1,13 +1,19 @@
 """Testing for pyurlcheck."""
-import os
 
-import toml
+import pathlib
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
+
 from pyurlcheck import __version__
 
 
 def test_version():
     """Simple version test."""
-    parent_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    print(parent_path)
-    poetry_version = toml.load(f".{parent_path}pyproject.toml")["tool"]["poetry"]["version"]
+    pyproject_path = pathlib.Path(__file__).resolve().parent.parent / "pyproject.toml"
+    with open(pyproject_path, "rb") as f:
+        pyproject = tomllib.load(f)
+    poetry_version = pyproject["tool"]["poetry"]["version"]
     assert __version__ == poetry_version

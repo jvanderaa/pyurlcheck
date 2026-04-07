@@ -1,6 +1,6 @@
 # PYURLCHECK
 
-Project is currently a **WIP**.
+Requires Python 3.10+.
 
 `pyurlcheck` can be used to scan through all of a projects documents and validate any `public` facing URLs are still reachable.
 
